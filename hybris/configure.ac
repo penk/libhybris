@@ -182,6 +182,7 @@ AC_CONFIG_FILES([
 	common/gingerbread/Makefile
 	common/ics/Makefile
 	common/jb/Makefile
+	common/l/Makefile
 	egl/egl.pc
 	egl/Makefile
 	egl/platforms/Makefile
