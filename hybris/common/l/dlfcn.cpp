@@ -50,7 +50,7 @@ static void __bionic_format_dlerror(const char* msg, const char* detail) {
   __bionic_set_dlerror(buffer);
 }
 
-const char* dlerror() {
+const char* android_dlerror() {
   const char* old_value = __bionic_set_dlerror(NULL);
   return old_value;
 }
@@ -79,11 +79,11 @@ void* android_dlopen_ext(const char* filename, int flags, const android_dlextinf
   return dlopen_ext(filename, flags, extinfo);
 }
 
-void* dlopen(const char* filename, int flags) {
+void* android_dlopen(const char* filename, int flags) {
   return dlopen_ext(filename, flags, NULL);
 }
 
-void* dlsym(void* handle, const char* symbol) {
+void* android_dlsym(void* handle, const char* symbol) {
   ScopedPthreadMutexLocker locker(&g_dl_mutex);
 
 #if !defined(__LP64__)
@@ -129,7 +129,7 @@ void* dlsym(void* handle, const char* symbol) {
   }
 }
 
-int dladdr(const void* addr, Dl_info* info) {
+int android_dladdr(const void* addr, Dl_info* info) {
   ScopedPthreadMutexLocker locker(&g_dl_mutex);
 
   // Determine if this address can be found in any library currently mapped.
@@ -154,7 +154,7 @@ int dladdr(const void* addr, Dl_info* info) {
   return 1;
 }
 
-int dlclose(void* handle) {
+int android_dlclose(void* handle) {
   ScopedPthreadMutexLocker locker(&g_dl_mutex);
   do_dlclose(reinterpret_cast<soinfo*>(handle));
   // dlclose has no defined errors.
@@ -184,12 +184,12 @@ int dlclose(void* handle) {
   // 0000000 00011111 111112 22222222 2333333 3333444444444455555555556666666 6667777777777888888888899999 9999900000000001 1111111112222222222 333333333344444444445
   // 0123456 78901234 567890 12345678 9012345 6789012345678901234567890123456 7890123456789012345678901234 5678901234567890 1234567890123456789 012345678901234567890
 #  define ANDROID_LIBDL_STRTAB \
-    "dlopen\0dlclose\0dlsym\0dlerror\0dladdr\0android_update_LD_LIBRARY_PATH\0android_get_LD_LIBRARY_PATH\0dl_iterate_phdr\0android_dlopen_ext\0dl_unwind_find_exidx\0"
+    "android_dlopen\0android_dlclose\0android_dlsym\0android_dlerror\0android_dladdr\0android_update_LD_LIBRARY_PATH\0android_get_LD_LIBRARY_PATH\0dl_iterate_phdr\0android_dlopen_ext\0dl_unwind_find_exidx\0"
 #elif defined(__aarch64__) || defined(__i386__) || defined(__mips__) || defined(__x86_64__)
   // 0000000 00011111 111112 22222222 2333333 3333444444444455555555556666666 6667777777777888888888899999 9999900000000001 1111111112222222222
   // 0123456 78901234 567890 12345678 9012345 6789012345678901234567890123456 7890123456789012345678901234 5678901234567890 1234567890123456789
 #  define ANDROID_LIBDL_STRTAB \
-    "dlopen\0dlclose\0dlsym\0dlerror\0dladdr\0android_update_LD_LIBRARY_PATH\0android_get_LD_LIBRARY_PATH\0dl_iterate_phdr\0android_dlopen_ext\0"
+    "android_dlopen\0android_dlclose\0android_dlsym\0android_dlerror\0android_dladdr\0android_update_LD_LIBRARY_PATH\0android_get_LD_LIBRARY_PATH\0dl_iterate_phdr\0android_dlopen_ext\0"
 #else
 #  error Unsupported architecture. Only arm, arm64, mips, mips64, x86 and x86_64 are presently supported.
 #endif
@@ -200,11 +200,11 @@ static ElfW(Sym) g_libdl_symtab[] = {
   // supposed to have st_name == 0, but instead, it points to an index
   // in the strtab with a \0 to make iterating through the symtab easier.
   ELFW(SYM_INITIALIZER)(sizeof(ANDROID_LIBDL_STRTAB) - 1, NULL, 0),
-  ELFW(SYM_INITIALIZER)(  0, &dlopen, 1),
-  ELFW(SYM_INITIALIZER)(  7, &dlclose, 1),
-  ELFW(SYM_INITIALIZER)( 15, &dlsym, 1),
-  ELFW(SYM_INITIALIZER)( 21, &dlerror, 1),
-  ELFW(SYM_INITIALIZER)( 29, &dladdr, 1),
+  ELFW(SYM_INITIALIZER)(  0, &android_dlopen, 1),
+  ELFW(SYM_INITIALIZER)(  7, &android_dlclose, 1),
+  ELFW(SYM_INITIALIZER)( 15, &android_dlsym, 1),
+  ELFW(SYM_INITIALIZER)( 21, &android_dlerror, 1),
+  ELFW(SYM_INITIALIZER)( 29, &android_dladdr, 1),
   ELFW(SYM_INITIALIZER)( 36, &android_update_LD_LIBRARY_PATH, 1),
   ELFW(SYM_INITIALIZER)( 67, &android_get_LD_LIBRARY_PATH, 1),
   ELFW(SYM_INITIALIZER)( 95, &dl_iterate_phdr, 1),

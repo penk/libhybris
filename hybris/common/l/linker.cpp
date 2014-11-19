@@ -2101,7 +2101,7 @@ static ElfW(Addr) __linker_init_post_relocation(KernelArgumentBlock& args, ElfW(
      *       to point to a different location to ensure that no other
      *       shared library constructor can access it.
      */
-  __libc_init_tls(args);
+  //__libc_init_tls(args);
 
 #if TIMING
     struct timeval t0, t1;
@@ -2117,7 +2117,7 @@ static ElfW(Addr) __linker_init_post_relocation(KernelArgumentBlock& args, ElfW(
         nullify_closed_stdio();
     }
 
-    debuggerd_init();
+    //debuggerd_init();
 
     // Get a few environment variables.
     const char* LD_DEBUG = linker_env_get("LD_DEBUG");

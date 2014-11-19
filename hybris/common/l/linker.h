@@ -247,4 +247,9 @@ extern "C" void notify_gdb_of_libraries();
 char* linker_get_error_buffer();
 size_t linker_get_error_buffer_size();
 
+#define __libc_format_buffer(x...) 1
+#define __libc_format_log(x...) x
+#define __libc_format_fd(x...) x
+#define __libc_fatal(x...) x
+
 #endif
