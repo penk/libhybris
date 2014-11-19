@@ -95,7 +95,9 @@ libhybris_eglplatformcommon_la_LDFLAGS = \
 if HAS_ANDROID_4_2_0
 libhybris_eglplatformcommon_la_LDFLAGS += $(top_builddir)/libsync/libsync.la
 endif
-
+if HAS_ANDROID_5_0_0
+libhybris_eglplatformcommon_la_LDFLAGS += $(top_builddir)/libsync/libsync.la
+endif
 
 eglplatformcommondir = $(includedir)/hybris/eglplatformcommon
 eglplatformcommon_HEADERS = \

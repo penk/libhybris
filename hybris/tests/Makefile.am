@@ -13,6 +13,9 @@ bin_PROGRAMS = \
 if HAS_ANDROID_4_2_0
 bin_PROGRAMS += test_hwcomposer
 endif
+if HAS_ANDROID_5_0_0
+bin_PROGRAMS += test_hwcomposer
+endif
 
 if HAS_LIBNFC_NXP_HEADERS
 bin_PROGRAMS += test_nfc

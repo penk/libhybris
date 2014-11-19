@@ -2,6 +2,11 @@ lib_LTLIBRARIES = \
 	libhybris-common.la
 
 # JB linker works fine for ICS
+
+#if HAS_ANDROID_5_0_0
+#SUBDIR = l
+#libhybris_common_la_LIBADD= l/libandroid-linker.la
+#else
 if HAS_ANDROID_4_0_0
 SUBDIRS = jb
 libhybris_common_la_LIBADD= jb/libandroid-linker.la
@@ -13,6 +18,7 @@ else
 $(error No Android Version is defined)
 endif
 endif
+#endif
 
 libhybris_common_la_SOURCES = \
 	hooks.c \
