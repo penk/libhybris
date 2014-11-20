@@ -30,7 +30,7 @@
 /* This file hijacks the symbols stubbed out in libdl.so. */
 
 //static pthread_mutex_t g_dl_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
-static pthread_mutex_t dl_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+static pthread_mutex_t dl_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static const char* __bionic_set_dlerror(char* new_value) {
   char** dlerror_slot = &reinterpret_cast<char**>(__get_tls())[TLS_SLOT_DLERROR];
@@ -41,7 +41,7 @@ static const char* __bionic_set_dlerror(char* new_value) {
 }
 
 static void __bionic_format_dlerror(const char* msg, const char* detail) {
-    fprintf(stderr, "ERROR: %s, %s\n", msg, detail);
+    printf("ERROR: %s, %s\n", msg, detail);
 #if 0
   char* buffer = __get_thread()->dlerror_buffer;
   strlcpy(buffer, msg, __BIONIC_DLERROR_BUFFER_SIZE);

@@ -159,6 +159,12 @@ static pthread_rwlock_t* hybris_alloc_init_rwlock(void)
  *
  * */
 
+int *__errno(void)
+{
+    static int e;
+    return &e;
+}
+
 static void *my_malloc(size_t size)
 {
     return malloc(size);
