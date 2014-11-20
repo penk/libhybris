@@ -105,6 +105,9 @@ static const char* const kDefaultLdPaths[] = {
 #define LDPRELOAD_BUFSIZE (LDPRELOAD_MAX*64)
 #define LDPRELOAD_MAX 8
 
+// workaround for __errno
+#define __pure2 __attribute__((__const__))
+
 static char g_ld_library_paths_buffer[LDPATH_BUFSIZE];
 static const char* g_ld_library_paths[LDPATH_MAX + 1];
 
@@ -187,7 +190,9 @@ size_t linker_get_error_buffer_size() {
  */
 extern "C" void __attribute__((noinline)) __attribute__((visibility("default"))) rtld_db_dlactivity();
 
-static pthread_mutex_t g__r_debug_mutex = PTHREAD_MUTEX_INITIALIZER;
+//static pthread_mutex_t g__r_debug_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _r_debug_lock = PTHREAD_MUTEX_INITIALIZER;
+
 static r_debug _r_debug = {1, NULL, reinterpret_cast<uintptr_t>(&rtld_db_dlactivity), r_debug::RT_CONSISTENT, 0};
 static link_map* r_debug_tail = 0;
 
@@ -236,7 +241,8 @@ static void notify_gdb_of_load(soinfo* info) {
         return;
     }
 
-    ScopedPthreadMutexLocker locker(&g__r_debug_mutex);
+    //ScopedPthreadMutexLocker locker(&g__r_debug_mutex);
+    pthread_mutex_lock(&_r_debug_lock);
 
     _r_debug.r_state = r_debug::RT_ADD;
     rtld_db_dlactivity();
@@ -245,6 +251,7 @@ static void notify_gdb_of_load(soinfo* info) {
 
     _r_debug.r_state = r_debug::RT_CONSISTENT;
     rtld_db_dlactivity();
+    pthread_mutex_unlock(&_r_debug_lock);
 }
 
 static void notify_gdb_of_unload(soinfo* info) {
@@ -253,7 +260,8 @@ static void notify_gdb_of_unload(soinfo* info) {
         return;
     }
 
-    ScopedPthreadMutexLocker locker(&g__r_debug_mutex);
+    //ScopedPthreadMutexLocker locker(&g__r_debug_mutex);
+    pthread_mutex_lock(&_r_debug_lock);
 
     _r_debug.r_state = r_debug::RT_DELETE;
     rtld_db_dlactivity();
@@ -262,6 +270,7 @@ static void notify_gdb_of_unload(soinfo* info) {
 
     _r_debug.r_state = r_debug::RT_CONSISTENT;
     rtld_db_dlactivity();
+    pthread_mutex_unlock(&_r_debug_lock);
 }
 
 void notify_gdb_of_libraries() {

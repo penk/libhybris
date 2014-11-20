@@ -29,7 +29,8 @@
 
 /* This file hijacks the symbols stubbed out in libdl.so. */
 
-static pthread_mutex_t g_dl_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+//static pthread_mutex_t g_dl_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+static pthread_mutex_t dl_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
 
 static const char* __bionic_set_dlerror(char* new_value) {
   char** dlerror_slot = &reinterpret_cast<char**>(__get_tls())[TLS_SLOT_DLERROR];
@@ -40,6 +41,7 @@ static const char* __bionic_set_dlerror(char* new_value) {
 }
 
 static void __bionic_format_dlerror(const char* msg, const char* detail) {
+    fprintf(stderr, "ERROR: %s, %s\n", msg, detail);
 #if 0
   char* buffer = __get_thread()->dlerror_buffer;
   strlcpy(buffer, msg, __BIONIC_DLERROR_BUFFER_SIZE);
@@ -58,22 +60,29 @@ extern "C" const char* android_dlerror() {
 }
 
 void android_get_LD_LIBRARY_PATH(char* buffer, size_t buffer_size) {
-  ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  //ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  pthread_mutex_lock(&dl_lock);
   do_android_get_LD_LIBRARY_PATH(buffer, buffer_size);
+  pthread_mutex_unlock(&dl_lock);
 }
 
 void android_update_LD_LIBRARY_PATH(const char* ld_library_path) {
-  ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  //ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  pthread_mutex_lock(&dl_lock);
   do_android_update_LD_LIBRARY_PATH(ld_library_path);
+  pthread_mutex_unlock(&dl_lock);
 }
 
 static void* dlopen_ext(const char* filename, int flags, const android_dlextinfo* extinfo) {
-  ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  //ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  pthread_mutex_lock(&dl_lock);
   soinfo* result = do_dlopen(filename, flags, extinfo);
   if (result == NULL) {
     __bionic_format_dlerror("dlopen failed", linker_get_error_buffer());
+    pthread_mutex_unlock(&dl_lock);
     return NULL;
   }
+  pthread_mutex_unlock(&dl_lock);
   return result;
 }
 
@@ -86,17 +95,20 @@ extern "C" void* android_dlopen(const char* filename, int flags) {
 }
 
 extern "C" void* android_dlsym(void* handle, const char* symbol) {
-  ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  //ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  pthread_mutex_lock(&dl_lock);
 
 #if !defined(__LP64__)
   if (handle == NULL) {
     __bionic_format_dlerror("dlsym library handle is null", NULL);
+    pthread_mutex_unlock(&dl_lock);
     return NULL;
   }
 #endif
 
   if (symbol == NULL) {
     __bionic_format_dlerror("dlsym symbol name is null", NULL);
+    pthread_mutex_unlock(&dl_lock);
     return NULL;
   }
 
@@ -120,19 +132,23 @@ extern "C" void* android_dlsym(void* handle, const char* symbol) {
     unsigned bind = ELF_ST_BIND(sym->st_info);
 
     if ((bind == STB_GLOBAL || bind == STB_WEAK) && sym->st_shndx != 0) {
+      pthread_mutex_unlock(&dl_lock);
       return reinterpret_cast<void*>(sym->st_value + found->load_bias);
     }
 
     __bionic_format_dlerror("symbol found but not global", symbol);
+    pthread_mutex_unlock(&dl_lock);
     return NULL;
   } else {
     __bionic_format_dlerror("undefined symbol", symbol);
+    pthread_mutex_unlock(&dl_lock);
     return NULL;
   }
 }
 
 extern "C" int android_dladdr(const void* addr, Dl_info* info) {
-  ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  //ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  pthread_mutex_lock(&dl_lock);
 
   // Determine if this address can be found in any library currently mapped.
   soinfo* si = find_containing_library(addr);
@@ -152,14 +168,16 @@ extern "C" int android_dladdr(const void* addr, Dl_info* info) {
     info->dli_sname = si->strtab + sym->st_name;
     info->dli_saddr = reinterpret_cast<void*>(si->load_bias + sym->st_value);
   }
-
+  pthread_mutex_unlock(&dl_lock);
   return 1;
 }
 
 extern "C" int android_dlclose(void* handle) {
-  ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  //ScopedPthreadMutexLocker locker(&g_dl_mutex);
+  pthread_mutex_lock(&dl_lock);
   do_dlclose(reinterpret_cast<soinfo*>(handle));
   // dlclose has no defined errors.
+  pthread_mutex_unlock(&dl_lock);
   return 0;
 }
 
