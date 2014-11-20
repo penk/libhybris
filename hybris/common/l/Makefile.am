@@ -1,13 +1,13 @@
 if WANT_ARCH_ARM
 ARCHFLAGS = -DHAVE_ARM_TLS_REGISTER -DANDROID_ARM_LINKER
-DEFAULT_INCLUDES = -I$(bionic_libc)/ -I$(bionic_libc)/include/ -I$(bionic_libc)/arch-arm/include/
+DEFAULT_INCLUDES =  -I. -I$(top_builddir) -I$(bionic_libc)/ -I$(bionic_libc)/include/ -I$(bionic_libc)/arch-arm/include/
 endif
 
 if  WANT_ARCH_X86
 ARCHFLAGS = -DANDROID_X86_LINKER
 endif
 
-AM_CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11
 
 noinst_LTLIBRARIES = \
 	libandroid-linker.la
