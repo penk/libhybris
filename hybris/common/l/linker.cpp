@@ -84,8 +84,8 @@ static ElfW(Addr) get_elf_exec_load_bias(const ElfW(Ehdr)* elf);
 static LinkerAllocator<soinfo> g_soinfo_allocator;
 static LinkerAllocator<LinkedListEntry<soinfo>> g_soinfo_links_allocator;
 
-static soinfo* solist;
-static soinfo* sonext;
+static soinfo* solist; // = get_libdl_info();
+static soinfo* sonext = get_libdl_info();
 static soinfo* somain; /* main process, always the one after libdl_info */
 
 static const char* const kDefaultLdPaths[] = {
@@ -107,6 +107,18 @@ static const char* const kDefaultLdPaths[] = {
 
 // workaround for __errno
 #define __pure2 __attribute__((__const__))
+
+extern "C" size_t __strlen_chk(const char* s, size_t s_len) {
+  size_t ret = strlen(s);
+
+  if (__predict_false(ret >= s_len)) {
+      printf("strlen: prevented read past end of buffer\n");
+    }
+
+  return ret;
+}
+
+// workaround
 
 static char g_ld_library_paths_buffer[LDPATH_BUFSIZE];
 static const char* g_ld_library_paths[LDPATH_MAX + 1];
