@@ -21,6 +21,7 @@
 #include <hybris/common/binding.h>
 
 #include "hooks_shm.h"
+#include "hooks.h"
 
 #define _GNU_SOURCE
 #include <stdio.h>

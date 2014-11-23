@@ -50,6 +50,10 @@
 #include "linker_phdr.h"
 #include "linker_allocator.h"
 
+extern "C" {
+#include "../hooks.h"
+}
+
 /* >>> IMPORTANT NOTE - READ ME BEFORE MODIFYING <<<
  *
  * Do NOT use malloc() and friends or pthread_*() code here.
@@ -84,7 +88,7 @@ static ElfW(Addr) get_elf_exec_load_bias(const ElfW(Ehdr)* elf);
 static LinkerAllocator<soinfo> g_soinfo_allocator;
 static LinkerAllocator<LinkedListEntry<soinfo>> g_soinfo_links_allocator;
 
-static soinfo* solist; // = get_libdl_info();
+static soinfo* solist = get_libdl_info();
 static soinfo* sonext = get_libdl_info();
 static soinfo* somain; /* main process, always the one after libdl_info */
 
@@ -1235,7 +1239,19 @@ static int soinfo_relocate(soinfo* si, ElfW(Rel)* rel, unsigned count, soinfo* n
         }
         if (sym != 0) {
             sym_name = reinterpret_cast<const char*>(si->strtab + si->symtab[sym].st_name);
-            s = soinfo_do_lookup(si, sym_name, &lsi, needed);
+
+            // FIXME: real deal here 
+            printf("HYBRIS: '%s' checking hooks for sym '%s'\n", si->name, sym_name);
+            sym_addr = get_hooked_symbol(sym_name);
+
+            if (sym_addr != NULL) {
+                printf("HYBRIS: '%s' hooked symbol %s to %x\n", si->name, sym_name, sym_addr);
+            }
+            else {
+                s = soinfo_do_lookup(si, sym_name, &lsi, needed);
+            }
+
+            if (sym_addr == NULL)
             if (s == NULL) {
                 // We only allow an undefined symbol if this is a weak reference...
                 s = &si->symtab[sym];
